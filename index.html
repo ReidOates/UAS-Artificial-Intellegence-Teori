@@ -22,8 +22,199 @@
 </head>
 <body>
     
-    <!-- UI Milestone structures will go here -->
-    <div id="app"></div>
+    <!-- Navbar -->
+    <header class="navbar" id="main-header">
+        <div class="container">
+            <div class="brand-logo">
+                <i data-lucide="cpu"></i>
+                <span>PNR Validator</span>
+            </div>
+            <nav class="main-nav" aria-label="Main Navigation">
+                <ul class="nav-links">
+                    <li><a href="#validator-section">Validator</a></li>
+                    <li><a href="#execution-trace-section">Execution Trace</a></li>
+                    <li><a href="#transition-table-section">Transition Table</a></li>
+                    <li><a href="#interactive-dfa-section">State Diagram</a></li>
+                    <li><a href="#theory-section">Theory</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="hero" id="hero-section">
+            <div class="container">
+                <h1 class="hero-title">Passenger Name Record Validator</h1>
+                <p class="hero-subtitle">Deterministic Finite Automata (DFA) Engine for structural PNR validation.</p>
+            </div>
+        </section>
+
+        <!-- Validator Section -->
+        <section class="validator" id="validator-section">
+            <div class="container">
+                <div class="card validator-card">
+                    <h2>PNR Validation Engine</h2>
+                    <form id="pnr-form" class="validation-form" novalidate>
+                        <div class="input-group">
+                            <label for="pnr-input">Enter PNR Code (Format: LLDDLL)</label>
+                            <div class="input-controls">
+                                <input type="text" id="pnr-input" name="pnr-input" placeholder="e.g., AB12CD" maxlength="6" autocomplete="off" required>
+                                <button type="submit" id="btn-validate" class="btn primary-btn">Validate</button>
+                                <button type="button" id="btn-reset" class="btn secondary-btn">Reset</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Validation Result Placeholder -->
+                    <div id="validation-result" class="result-container hidden" aria-live="polite">
+                        <div class="result-header">
+                            <h3 id="result-status">Status: Pending</h3>
+                            <button type="button" id="btn-copy" class="btn icon-btn" title="Copy Result">
+                                <i data-lucide="copy"></i>
+                            </button>
+                        </div>
+                        <p id="result-message" class="result-message">Awaiting input...</p>
+                        <!-- Error code will appear here if invalid -->
+                        <span id="error-code-badge" class="badge hidden"></span>
+                    </div>
+
+                    <!-- History Placeholder -->
+                    <div id="validation-history" class="history-container">
+                        <h3>Validation History</h3>
+                        <ul id="history-list" class="history-list">
+                            <li class="history-empty">No history available yet.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Execution Trace Section -->
+        <section class="execution-trace" id="execution-trace-section">
+            <div class="container">
+                <div class="card trace-card">
+                    <h2>Execution Trace</h2>
+                    <div class="trace-header">
+                        <p>Current State: <span id="current-state-badge" class="state-badge">q0</span></p>
+                    </div>
+                    <!-- Trace steps placeholder -->
+                    <div id="trace-timeline" class="trace-timeline">
+                        <p class="placeholder-text">Input a PNR to view step-by-step state transitions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Transition Table Section -->
+        <section class="transition-table" id="transition-table-section">
+            <div class="container">
+                <h2>Transition Table</h2>
+                <div class="table-container">
+                    <table class="dfa-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Current State</th>
+                                <th scope="col">Input: Letter (A-Z)</th>
+                                <th scope="col">Input: Digit (0-9)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>&rarr; q0 (Start)</td>
+                                <td>q1</td>
+                                <td>qReject</td>
+                            </tr>
+                            <tr>
+                                <td>q1</td>
+                                <td>q2</td>
+                                <td>qReject</td>
+                            </tr>
+                            <tr>
+                                <td>q2</td>
+                                <td>qReject</td>
+                                <td>q3</td>
+                            </tr>
+                            <tr>
+                                <td>q3</td>
+                                <td>qReject</td>
+                                <td>q4</td>
+                            </tr>
+                            <tr>
+                                <td>q4</td>
+                                <td>q5</td>
+                                <td>qReject</td>
+                            </tr>
+                            <tr>
+                                <td>q5</td>
+                                <td>*q6 (Accept)</td>
+                                <td>qReject</td>
+                            </tr>
+                            <tr>
+                                <td>*q6</td>
+                                <td>qReject</td>
+                                <td>qReject</td>
+                            </tr>
+                            <tr>
+                                <td>qReject</td>
+                                <td>qReject</td>
+                                <td>qReject</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive DFA Section -->
+        <section class="interactive-dfa" id="interactive-dfa-section">
+            <div class="container">
+                <h2>State Diagram</h2>
+                <div class="card diagram-card">
+                    <!-- Placeholder for visual node rendering -->
+                    <div id="dfa-diagram-container" class="diagram-container">
+                        <p class="placeholder-text">Interactive DFA diagram will be rendered here.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Theory Section -->
+        <section class="theory" id="theory-section">
+            <div class="container">
+                <h2>Automata Theory</h2>
+                <div class="theory-grid">
+                    <article class="theory-card">
+                        <h3>Language Definition</h3>
+                        <ul>
+                            <li><strong>Format Simulation:</strong> LLDDLL</li>
+                            <li><strong>Alphabet (Σ):</strong> {A-Z, 0-9}</li>
+                            <li><strong>Accept Language:</strong> [A-Z]{2}[0-9]{2}[A-Z]{2}</li>
+                        </ul>
+                    </article>
+                    
+                    <article class="theory-card">
+                        <h3>DFA Properties</h3>
+                        <ul>
+                            <li><strong>States (Q):</strong> {q0, q1, q2, q3, q4, q5, q6, qReject}</li>
+                            <li><strong>Start State:</strong> q0</li>
+                            <li><strong>Accept State (F):</strong> {q6}</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer" id="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <p>&copy; 2026 PNR Validator</p>
+                <p>Universitas Bale Bandung - Academic Project</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- JS Imports (Order matters: Utils & DFA first, App last) -->
     <script src="assets/js/utils.js"></script>
