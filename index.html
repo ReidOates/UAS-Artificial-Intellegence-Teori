@@ -106,15 +106,15 @@
             </div>
         </section>
 
-        <!-- Transition Table Section -->
+       <!-- Transition Table Section -->
         <section class="transition-table" id="transition-table-section">
             <div class="container">
-                <h2>Transition Table</h2>
+                <h2>Transition Table (&delta;)</h2>
                 <div class="table-container">
                     <table class="dfa-table">
                         <thead>
                             <tr>
-                                <th scope="col">Current State</th>
+                                <th scope="col">Current State (Q)</th>
                                 <th scope="col">Input: Letter (A-Z)</th>
                                 <th scope="col">Input: Digit (0-9)</th>
                             </tr>
@@ -182,25 +182,46 @@
         <!-- Theory Section -->
         <section class="theory" id="theory-section">
             <div class="container">
-                <h2>Automata Theory</h2>
+                <h2>Automata Theory & Documentation</h2>
                 <div class="theory-grid">
+                    
+                    <!-- PNR Simulation Explanation -->
+                    <article class="theory-card">
+                        <h3>PNR Simulation</h3>
+                        <p>In the aviation industry, a Passenger Name Record (PNR) acts as a unique reservation identifier. For this academic project, the PNR format is strictly simulated as a 6-character alphanumeric sequence following the pattern: <strong>Letter-Letter-Digit-Digit-Letter-Letter (LLDDLL)</strong>. This deterministic structure allows for unambiguous validation by finite automata.</p>
+                    </article>
+
+                    <!-- Language Definition -->
                     <article class="theory-card">
                         <h3>Language Definition</h3>
+                        <p>The formal language recognized by the validation engine is defined as:</p>
                         <ul>
-                            <li><strong>Format Simulation:</strong> LLDDLL</li>
-                            <li><strong>Alphabet (Σ):</strong> {A-Z, 0-9}</li>
-                            <li><strong>Accept Language:</strong> [A-Z]{2}[0-9]{2}[A-Z]{2}</li>
+                            <li><strong>Alphabet (&Sigma;):</strong> {A-Z, 0-9}</li>
+                            <li><strong>Target Format:</strong> LLDDLL</li>
+                            <li><strong>Accept Language:</strong> <code>[A-Z]{2}[0-9]{2}[A-Z]{2}</code></li>
+                            <li><strong>Length Constraint:</strong> Exactly 6 characters</li>
                         </ul>
                     </article>
-                    
+
+                    <!-- DFA Component Explanation -->
                     <article class="theory-card">
-                        <h3>DFA Properties</h3>
+                        <h3>DFA Components (5-Tuple)</h3>
+                        <p>The Deterministic Finite Automaton is formally defined as <strong>M = (Q, &Sigma;, &delta;, q0, F)</strong>:</p>
                         <ul>
-                            <li><strong>States (Q):</strong> {q0, q1, q2, q3, q4, q5, q6, qReject}</li>
-                            <li><strong>Start State:</strong> q0</li>
-                            <li><strong>Accept State (F):</strong> {q6}</li>
+                            <li><strong>Q (Finite set of states):</strong> {q0, q1, q2, q3, q4, q5, q6, qReject}</li>
+                            <li><strong>&Sigma; (Alphabet):</strong> {A-Z, 0-9}</li>
+                            <li><strong>&delta; (Transition Function):</strong> Defined in the Transition Table above.</li>
+                            <li><strong>q0 (Start State):</strong> q0</li>
+                            <li><strong>F (Set of Accept States):</strong> {q6}</li>
                         </ul>
                     </article>
+
+                    <!-- DFA Theory Section -->
+                    <article class="theory-card">
+                        <h3>DFA Theory</h3>
+                        <p>A Deterministic Finite Automaton (DFA) is a theoretical computation model that processes a string of symbols from left to right, changing states according to a fixed set of rules. It is <em>deterministic</em> because every state has exactly one valid transition for each input symbol. Any deviation from the accepted language format routes the execution to a non-escaping <strong>qReject</strong> sink state.</p>
+                    </article>
+
                 </div>
             </div>
         </section>
