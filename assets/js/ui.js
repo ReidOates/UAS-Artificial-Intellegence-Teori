@@ -1,7 +1,7 @@
 /**
  * assets/js/ui.js
  * 
- * UI Integration Layer
+ * UI Integration Layer & Execution Trace
  * Academic Project: PNR Validator
  */
 
@@ -42,7 +42,7 @@ class UIController {
     }
 
     handleValidation(e) {
-        e.preventDefault(); // Prevent page reload
+        e.preventDefault(); 
         
         const pnrValue = this.input.value.trim();
         if (!pnrValue) return;
@@ -53,7 +53,9 @@ class UIController {
         
         // Update UI
         this.displayResult(result);
-        this.displayTrace(result.executionTrace, result.finalState);
+        
+        // Pass trace, final state, and error code to trace renderer
+        this.displayTrace(result.executionTrace, result.finalState, result.errorCode);
     }
 
     handleReset() {
@@ -82,7 +84,6 @@ class UIController {
     }
 
     displayResult(result) {
-        // Show container
         this.resultContainer.classList.remove('hidden');
         
         if (result.isValid) {
@@ -102,8 +103,8 @@ class UIController {
         }
     }
 
-    displayTrace(trace, finalState) {
-        // Update current state badge
+    displayTrace(trace, finalState, errorCode) {
+        // Update current state indicator badge
         this.currentStateBadge.textContent = finalState;
         
         // Clear timeline placeholder
@@ -114,27 +115,57 @@ class UIController {
             return;
         }
 
-        // Build list elements for the trace execution dynamically
-        const ul = document.createElement('ul');
-        ul.style.listStyle = 'none';
-        ul.style.width = '100%';
-        ul.style.textAlign = 'left';
+        // Create container for formatted execution trace
+        const traceContainer = document.createElement('div');
+        traceContainer.style.width = '100%';
+        traceContainer.style.textAlign = 'left';
+        traceContainer.style.fontFamily = 'monospace';
+        traceContainer.style.fontSize = '1.1rem';
+        traceContainer.style.lineHeight = '2';
 
+        // 1. DFA Execution Trace
         trace.forEach(step => {
-            const li = document.createElement('li');
-            li.style.padding = '0.5rem 0';
-            li.style.borderBottom = '1px solid var(--border-color)';
-            li.innerHTML = `<strong>Step ${step.step}:</strong> Read <code>${step.inputChar}</code> &rarr; Transition: <span class="badge" style="background:var(--bg-surface-hover); color:inherit">${step.fromState}</span> &rarr; <span class="badge" style="background:var(--bg-surface-hover); color:inherit">${step.toState}</span>`;
+            const stepDiv = document.createElement('div');
             
-            if (step.error) {
-                li.innerHTML += ` <span style="color:var(--error); font-size:0.8rem; margin-left:0.5rem;">(${step.error})</span>`;
+            // Core formatting: q0 --A--> q1
+            let traceText = `${step.fromState} --${step.inputChar}--> ${step.toState}`;
+            
+            // Error Code Display inline if rejected on this step
+            if (step.toState === 'qReject' && step.error) {
+                traceText += ` <span style="color: var(--error); font-size: 0.9rem; font-family: var(--font-family);">[${step.error}]</span>`;
             }
-            ul.appendChild(li);
+
+            stepDiv.innerHTML = traceText;
+            traceContainer.appendChild(stepDiv);
         });
 
-        this.traceTimeline.appendChild(ul);
+        // Add specific handling for E07 (Length error) which might not appear in character steps
+        if (errorCode === 'E07') {
+            const lengthErrorDiv = document.createElement('div');
+            lengthErrorDiv.innerHTML = `<span style="color: var(--warning); font-size: 0.9rem; font-family: var(--font-family);">[E07 Input Length must equal six]</span>`;
+            traceContainer.appendChild(lengthErrorDiv);
+        }
+
+        // 2. Final State Display
+        const finalStateDiv = document.createElement('div');
+        finalStateDiv.style.marginTop = '1rem';
+        finalStateDiv.style.paddingTop = '1rem';
+        finalStateDiv.style.borderTop = '1px solid var(--border-color)';
+        finalStateDiv.style.fontFamily = 'var(--font-family)';
+        finalStateDiv.style.fontWeight = '600';
+        
+        if (finalState === 'q6' && !errorCode) {
+            finalStateDiv.innerHTML = `Final State: <span style="color: var(--success);">${finalState} (Accept)</span>`;
+        } else {
+            finalStateDiv.innerHTML = `Final State: <span style="color: var(--error);">${finalState} (Reject)</span>`;
+        }
+        
+        traceContainer.appendChild(finalStateDiv);
+
+        // Append to DOM
+        this.traceTimeline.appendChild(traceContainer);
     }
 }
 
-// Instantiate globally so app.js can trigger it
+// Instantiate globally
 const uiController = new UIController();
