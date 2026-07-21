@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNR Validator | DFA Engine</title>
+    
+    <!-- Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons: Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- CSS Imports (Order matters: Variables first, Responsive last) -->
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+    
+    <!-- UI Milestone structures will go here -->
+    <div id="app"></div>
+
+    <!-- JS Imports (Order matters: Utils & DFA first, App last) -->
+    <script src="assets/js/utils.js"></script>
+    <script src="assets/js/dfa.js"></script>
+    <script src="assets/js/validator.js"></script>
+    <script src="assets/js/ui.js"></script>
+    <script src="assets/js/animation.js"></script>
+    <script src="assets/js/history.js"></script>
+    <script src="assets/js/app.js"></script>
+    
+    <!-- Initialize Icons -->
+    <script>
+      lucide.createIcons();
+    </script>
+</body>
+</html>
