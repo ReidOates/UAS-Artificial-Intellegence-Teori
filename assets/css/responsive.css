@@ -1,10 +1,17 @@
+/* assets/css/responsive.css */
+
+/* Accessibility: Improved Focus Indicators */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 4px;
+}
+
+/* Base Mobile Adaptations */
 @media (max-width: 768px) {
-    /* Navbar */
     .nav-links {
-        display: none; /* Can be updated to a hamburger menu later if needed */
+        display: none;
     }
 
-    /* Hero */
     .hero-title {
         font-size: 2rem;
     }
@@ -13,22 +20,28 @@
         font-size: 1rem;
     }
 
-    /* Forms */
     .input-controls {
         flex-direction: column;
     }
 
-    .input-controls .btn {
+    /* Accessibility: Larger touch targets for mobile */
+    .input-controls .btn, 
+    input[type="text"] {
         width: 100%;
+        min-height: 48px; 
     }
 
-    /* General Spacing */
     section {
         padding: var(--spacing-lg) 0;
     }
 
-    /* Theory Grid */
     .theory-grid {
         grid-template-columns: 1fr;
+    }
+
+    /* Ensure DFA Table scrolls horizontally on very small screens */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }

@@ -1,7 +1,7 @@
 /**
  * assets/js/animation.js
  * 
- * Interactive DFA Visualization Engine
+ * Interactive DFA Visualization Engine (Refactored for Performance)
  * Academic Project: PNR Validator
  */
 
@@ -27,12 +27,14 @@ class DFAVisualizer {
             { from: 'q4', to: 'q5', label: 'L' },
             { from: 'q5', to: 'q6', label: 'L' }
         ];
+        
+        // Cache object for DOM elements to improve animation performance
+        this.domCache = {};
 
         this.render();
     }
 
     render() {
-        // Inject SVG styles specific to the diagram
         const styleId = 'dfa-svg-styles';
         if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
@@ -43,12 +45,9 @@ class DFAVisualizer {
                 .dfa-node-text { fill: var(--text-main); font-size: 14px; font-weight: 500; text-anchor: middle; dominant-baseline: central; transition: all 0.3s ease; }
                 .dfa-edge { stroke: var(--border-light); stroke-width: 2px; fill: none; transition: all 0.3s ease; }
                 .dfa-edge-label { fill: var(--text-muted); font-size: 12px; font-weight: 600; text-anchor: middle; transition: all 0.3s ease; }
-                
-                /* Highlights */
                 .dfa-node.active { fill: rgba(59, 130, 246, 0.2); stroke: var(--primary); stroke-width: 3px; }
                 .dfa-node.active-accept { fill: rgba(16, 185, 129, 0.2); stroke: var(--success); stroke-width: 3px; }
                 .dfa-node.active-reject { fill: rgba(239, 68, 68, 0.2); stroke: var(--error); stroke-width: 3px; }
-                
                 .dfa-edge.active { stroke: var(--primary); stroke-width: 3px; }
                 .dfa-edge.active-reject { stroke: var(--error); stroke-width: 3px; }
                 .dfa-edge-label.active { fill: var(--primary); font-size: 14px; }
@@ -57,10 +56,8 @@ class DFAVisualizer {
             document.head.appendChild(style);
         }
 
-        // Build SVG Elements
-        let svg = `<svg class="dfa-svg" viewBox="0 0 720 280">`;
+        let svg = `<svg class="dfa-svg" viewBox="0 0 720 280" aria-label="Interactive DFA Diagram" role="img">`;
         
-        // Definitions for arrowheads
         svg += `
             <defs>
                 <marker id="arrow-normal" markerWidth="10" markerHeight="7" refX="22" refY="3.5" orient="auto">
@@ -75,15 +72,12 @@ class DFAVisualizer {
             </defs>
         `;
 
-        // Draw Reject Edges (from all valid states to qReject)
         for (let i = 0; i <= 6; i++) {
             const fromNode = this.nodes[i];
-            const toNode = this.nodes[7]; // qReject
-            // Draw a straight line to qReject
+            const toNode = this.nodes[7]; 
             svg += `<path id="edge-${fromNode.id}-qReject" class="dfa-edge" d="M ${fromNode.cx} ${fromNode.cy} L ${toNode.cx} ${toNode.cy}" marker-end="url(#arrow-normal)" />`;
         }
 
-        // Draw Valid Transition Edges
         this.validEdges.forEach(edge => {
             const fromNode = this.nodes.find(n => n.id === edge.from);
             const toNode = this.nodes.find(n => n.id === edge.to);
@@ -91,9 +85,7 @@ class DFAVisualizer {
             svg += `<text id="label-${edge.from}-${edge.to}" x="${(fromNode.cx + toNode.cx) / 2}" y="${fromNode.cy - 10}" class="dfa-edge-label">${edge.label}</text>`;
         });
 
-        // Draw Nodes
         this.nodes.forEach(node => {
-            // Draw double circle for Accept state
             if (node.isAccept) {
                 svg += `<circle cx="${node.cx}" cy="${node.cy}" r="24" class="dfa-node" id="node-outer-${node.id}" />`;
             }
@@ -103,10 +95,16 @@ class DFAVisualizer {
 
         svg += `</svg>`;
         this.container.innerHTML = svg;
+        
+        this.populateCache();
+    }
+
+    populateCache() {
+        // Cache DOM lookups for faster animation cycles
+        this.domCache.elements = this.container.querySelectorAll('[id^="edge-"], [id^="label-"], [id^="node-"]');
     }
 
     reset() {
-        // Clear all active classes and reset markers
         const elements = this.container.querySelectorAll('.active, .active-accept, .active-reject');
         elements.forEach(el => {
             el.classList.remove('active', 'active-accept', 'active-reject');
@@ -122,18 +120,16 @@ class DFAVisualizer {
 
     async animateTrace(trace) {
         this.reset();
-        
         if (!trace || trace.length === 0) return;
 
-        // Highlight start state
         this.highlightNode('q0', 'active');
-        await this.sleep(400);
+        await this.sleep(300); // Slightly sped up for better UX
 
         for (const step of trace) {
-            const edgeClass = step.toState === 'qReject' ? 'active-reject' : 'active';
-            const markerId = step.toState === 'qReject' ? 'url(#arrow-reject)' : 'url(#arrow-active)';
+            const isReject = step.toState === 'qReject';
+            const edgeClass = isReject ? 'active-reject' : 'active';
+            const markerId = isReject ? 'url(#arrow-reject)' : 'url(#arrow-active)';
             
-            // Highlight Edge
             const edge = document.getElementById(`edge-${step.fromState}-${step.toState}`);
             const label = document.getElementById(`label-${step.fromState}-${step.toState}`);
             
@@ -143,28 +139,24 @@ class DFAVisualizer {
             }
             if (label) label.classList.add(edgeClass);
             
-            await this.sleep(400);
+            await this.sleep(300);
 
-            // Highlight Target Node
             let nodeClass = 'active';
-            if (step.toState === 'qReject') nodeClass = 'active-reject';
+            if (isReject) nodeClass = 'active-reject';
             if (step.toState === 'q6') nodeClass = 'active-accept';
 
             this.highlightNode(step.toState, nodeClass);
             
-            await this.sleep(400);
+            await this.sleep(300);
             
-            // Stop tracing if we hit a reject state
-            if (step.toState === 'qReject') break;
+            if (isReject) break;
         }
     }
 
     highlightNode(nodeId, className) {
         const node = document.getElementById(`node-${nodeId}`);
-        if (node) node.classList.add(className);
-        
-        // Handle double circle on accept
         const outerNode = document.getElementById(`node-outer-${nodeId}`);
+        if (node) node.classList.add(className);
         if (outerNode) outerNode.classList.add(className);
     }
 }

@@ -1,35 +1,28 @@
 /**
  * assets/js/ui.js
  * 
- * UI Integration Layer, History & Execution Trace
+ * UI Integration Layer (Refactored for Performance & DRY)
  * Academic Project: PNR Validator
  */
 
 class UIController {
     constructor() {
-        // Form & Inputs
         this.form = document.getElementById('pnr-form');
         this.input = document.getElementById('pnr-input');
-        
-        // Buttons
         this.resetBtn = document.getElementById('btn-reset');
         this.copyBtn = document.getElementById('btn-copy');
         
-        // Result Display Elements
         this.resultContainer = document.getElementById('validation-result');
         this.resultStatus = document.getElementById('result-status');
         this.resultMessage = document.getElementById('result-message');
         this.errorBadge = document.getElementById('error-code-badge');
         
-        // Trace Elements
         this.traceTimeline = document.getElementById('trace-timeline');
         this.currentStateBadge = document.getElementById('current-state-badge');
         
-        // History Elements
         this.historyContainer = document.getElementById('validation-history');
         this.historyList = document.getElementById('history-list');
         
-        // State & Utilities
         this.lastValidationResult = null;
         this.dfaVisualizer = new DFAVisualizer('dfa-diagram-container');
         this.historyManager = new ValidationHistory();
@@ -38,22 +31,18 @@ class UIController {
     }
 
     init() {
-        // Event Listeners
         this.form.addEventListener('submit', (e) => this.handleValidation(e));
         this.resetBtn.addEventListener('click', () => this.handleReset());
         this.copyBtn.addEventListener('click', () => this.handleCopy());
         
-        // Auto-uppercase input handling
         this.input.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
         
-        // Render initial history from LocalStorage
         this.renderHistory();
     }
 
     setupHistoryHeader() {
-        // Dynamically inject the "Clear History" button into the existing HTML structure
         const header = this.historyContainer.querySelector('h3');
         header.style.display = 'flex';
         header.style.justifyContent = 'space-between';
@@ -64,6 +53,7 @@ class UIController {
         this.clearHistoryBtn.style.padding = '0.2rem 0.5rem';
         this.clearHistoryBtn.style.fontSize = '0.75rem';
         this.clearHistoryBtn.textContent = 'Clear History';
+        this.clearHistoryBtn.setAttribute('aria-label', 'Clear validation history');
         
         this.clearHistoryBtn.addEventListener('click', () => this.handleClearHistory());
         header.appendChild(this.clearHistoryBtn);
@@ -75,33 +65,29 @@ class UIController {
         const pnrValue = this.input.value.trim();
         if (!pnrValue) return;
 
-        // Disable input and button during animation
-        this.input.disabled = true;
-        document.getElementById('btn-validate').disabled = true;
+        this.toggleInputs(true);
 
-        // Execute Validation
         const result = Validator.validatePNR(pnrValue);
         this.lastValidationResult = result;
         
-        // Save to History & Render
         this.historyManager.addEntry(result);
         this.renderHistory();
         
-        // Update UI
         this.displayResult(result);
         this.displayTrace(result.executionTrace, result.finalState, result.errorCode);
         
-        // Trigger smooth interactive diagram animation
         await this.dfaVisualizer.animateTrace(result.executionTrace);
 
-        // Re-enable inputs
-        this.input.disabled = false;
-        document.getElementById('btn-validate').disabled = false;
+        this.toggleInputs(false);
         this.input.focus();
     }
 
+    toggleInputs(isDisabled) {
+        this.input.disabled = isDisabled;
+        document.getElementById('btn-validate').disabled = isDisabled;
+    }
+
     handleReset() {
-        // Reset purely the active validation state without touching history
         this.form.reset();
         this.lastValidationResult = null;
         
@@ -116,10 +102,8 @@ class UIController {
 
     handleCopy() {
         if (!this.lastValidationResult) return;
-        
         const { input, isValid, errorMessage } = this.lastValidationResult;
-        const copyText = `PNR: ${input} | Status: ${isValid ? 'VALID' : 'INVALID'}` + 
-                         (errorMessage ? ` | Error: ${errorMessage}` : '');
+        const copyText = `PNR: ${input} | Status: ${isValid ? 'VALID' : 'INVALID'}${errorMessage ? ` | Error: ${errorMessage}` : ''}`;
         
         navigator.clipboard.writeText(copyText)
             .then(() => alert('Result copied to clipboard!'))
@@ -143,7 +127,9 @@ class UIController {
 
         this.clearHistoryBtn.classList.remove('hidden');
         
-        // Build history DOM nodes
+        // Performance: Use DocumentFragment
+        const fragment = document.createDocumentFragment();
+        
         history.forEach(item => {
             const li = document.createElement('li');
             li.style.display = 'flex';
@@ -163,27 +149,27 @@ class UIController {
                     <span style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">${timeStr}</span>
                 </div>
             `;
-            this.historyList.appendChild(li);
+            fragment.appendChild(li);
         });
+        
+        this.historyList.appendChild(fragment);
     }
 
     displayResult(result) {
         this.resultContainer.classList.remove('hidden');
         
-        if (result.isValid) {
-            this.resultStatus.textContent = 'Status: Valid PNR';
-            this.resultStatus.style.color = 'var(--success)';
-            this.resultMessage.textContent = `The input "${result.input}" successfully matched the DFA accept state.`;
-            this.errorBadge.classList.add('hidden');
-        } else {
-            this.resultStatus.textContent = 'Status: Invalid PNR';
-            this.resultStatus.style.color = 'var(--error)';
-            this.resultMessage.textContent = `The input "${result.input}" failed DFA validation.`;
+        const isSuccess = result.isValid;
+        this.resultStatus.textContent = isSuccess ? 'Status: Valid PNR' : 'Status: Invalid PNR';
+        this.resultStatus.style.color = isSuccess ? 'var(--success)' : 'var(--error)';
+        this.resultMessage.textContent = isSuccess 
+            ? `The input "${result.input}" successfully matched the DFA accept state.`
+            : `The input "${result.input}" failed DFA validation.`;
             
-            if (result.errorMessage) {
-                this.errorBadge.textContent = result.errorMessage;
-                this.errorBadge.classList.remove('hidden');
-            }
+        if (!isSuccess && result.errorMessage) {
+            this.errorBadge.textContent = result.errorMessage;
+            this.errorBadge.classList.remove('hidden');
+        } else {
+            this.errorBadge.classList.add('hidden');
         }
     }
 
@@ -203,22 +189,23 @@ class UIController {
         traceContainer.style.fontSize = '1.1rem';
         traceContainer.style.lineHeight = '2';
 
+        // Performance: Use DocumentFragment
+        const fragment = document.createDocumentFragment();
+
         trace.forEach(step => {
             const stepDiv = document.createElement('div');
             let traceText = `${step.fromState} --${step.inputChar}--> ${step.toState}`;
-            
             if (step.toState === 'qReject' && step.error) {
                 traceText += ` <span style="color: var(--error); font-size: 0.9rem; font-family: var(--font-family);">[${step.error}]</span>`;
             }
-
             stepDiv.innerHTML = traceText;
-            traceContainer.appendChild(stepDiv);
+            fragment.appendChild(stepDiv);
         });
 
         if (errorCode === 'E07') {
             const lengthErrorDiv = document.createElement('div');
             lengthErrorDiv.innerHTML = `<span style="color: var(--warning); font-size: 0.9rem; font-family: var(--font-family);">[E07 Input Length must equal six]</span>`;
-            traceContainer.appendChild(lengthErrorDiv);
+            fragment.appendChild(lengthErrorDiv);
         }
 
         const finalStateDiv = document.createElement('div');
@@ -228,16 +215,15 @@ class UIController {
         finalStateDiv.style.fontFamily = 'var(--font-family)';
         finalStateDiv.style.fontWeight = '600';
         
-        if (finalState === 'q6' && !errorCode) {
-            finalStateDiv.innerHTML = `Final State: <span style="color: var(--success);">${finalState} (Accept)</span>`;
-        } else {
-            finalStateDiv.innerHTML = `Final State: <span style="color: var(--error);">${finalState} (Reject)</span>`;
-        }
+        const stateColor = (finalState === 'q6' && !errorCode) ? 'var(--success)' : 'var(--error)';
+        const stateLabel = (finalState === 'q6' && !errorCode) ? 'Accept' : 'Reject';
         
-        traceContainer.appendChild(finalStateDiv);
+        finalStateDiv.innerHTML = `Final State: <span style="color: ${stateColor};">${finalState} (${stateLabel})</span>`;
+        
+        fragment.appendChild(finalStateDiv);
+        traceContainer.appendChild(fragment);
         this.traceTimeline.appendChild(traceContainer);
     }
 }
 
-// Instantiate globally
 const uiController = new UIController();
