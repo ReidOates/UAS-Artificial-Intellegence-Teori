@@ -7,68 +7,72 @@
 
 class UIController {
     constructor() {
-        // Form & Inputs
         this.form = document.getElementById('pnr-form');
         this.input = document.getElementById('pnr-input');
         
-        // Buttons
         this.resetBtn = document.getElementById('btn-reset');
         this.copyBtn = document.getElementById('btn-copy');
         
-        // Result Display Elements
         this.resultContainer = document.getElementById('validation-result');
         this.resultStatus = document.getElementById('result-status');
         this.resultMessage = document.getElementById('result-message');
         this.errorBadge = document.getElementById('error-code-badge');
         
-        // Trace Elements
         this.traceTimeline = document.getElementById('trace-timeline');
         this.currentStateBadge = document.getElementById('current-state-badge');
         
-        // State
         this.lastValidationResult = null;
+        
+        // Initialize Interactive DFA Visualizer
+        this.dfaVisualizer = new DFAVisualizer('dfa-diagram-container');
     }
 
     init() {
-        // Event Listeners
         this.form.addEventListener('submit', (e) => this.handleValidation(e));
         this.resetBtn.addEventListener('click', () => this.handleReset());
         this.copyBtn.addEventListener('click', () => this.handleCopy());
         
-        // Auto-uppercase input handling
         this.input.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
     }
 
-    handleValidation(e) {
+    async handleValidation(e) {
         e.preventDefault(); 
         
         const pnrValue = this.input.value.trim();
         if (!pnrValue) return;
 
-        // Invoke Validator from validator.js
+        // Disable input and button during animation
+        this.input.disabled = true;
+        document.getElementById('btn-validate').disabled = true;
+
         const result = Validator.validatePNR(pnrValue);
         this.lastValidationResult = result;
         
-        // Update UI
         this.displayResult(result);
-        
-        // Pass trace, final state, and error code to trace renderer
         this.displayTrace(result.executionTrace, result.finalState, result.errorCode);
+        
+        // Trigger smooth interactive diagram animation
+        await this.dfaVisualizer.animateTrace(result.executionTrace);
+
+        // Re-enable inputs
+        this.input.disabled = false;
+        document.getElementById('btn-validate').disabled = false;
+        this.input.focus();
     }
 
     handleReset() {
         this.form.reset();
         this.lastValidationResult = null;
         
-        // Hide result container
         this.resultContainer.classList.add('hidden');
         this.errorBadge.classList.add('hidden');
         
-        // Reset state & trace
         this.currentStateBadge.textContent = 'q0';
         this.traceTimeline.innerHTML = '<p class="placeholder-text">Input a PNR to view step-by-step state transitions.</p>';
+        
+        this.dfaVisualizer.reset();
     }
 
     handleCopy() {
@@ -104,10 +108,7 @@ class UIController {
     }
 
     displayTrace(trace, finalState, errorCode) {
-        // Update current state indicator badge
         this.currentStateBadge.textContent = finalState;
-        
-        // Clear timeline placeholder
         this.traceTimeline.innerHTML = '';
         
         if (!trace || trace.length === 0) {
@@ -115,7 +116,6 @@ class UIController {
             return;
         }
 
-        // Create container for formatted execution trace
         const traceContainer = document.createElement('div');
         traceContainer.style.width = '100%';
         traceContainer.style.textAlign = 'left';
@@ -123,14 +123,10 @@ class UIController {
         traceContainer.style.fontSize = '1.1rem';
         traceContainer.style.lineHeight = '2';
 
-        // 1. DFA Execution Trace
         trace.forEach(step => {
             const stepDiv = document.createElement('div');
-            
-            // Core formatting: q0 --A--> q1
             let traceText = `${step.fromState} --${step.inputChar}--> ${step.toState}`;
             
-            // Error Code Display inline if rejected on this step
             if (step.toState === 'qReject' && step.error) {
                 traceText += ` <span style="color: var(--error); font-size: 0.9rem; font-family: var(--font-family);">[${step.error}]</span>`;
             }
@@ -139,14 +135,12 @@ class UIController {
             traceContainer.appendChild(stepDiv);
         });
 
-        // Add specific handling for E07 (Length error) which might not appear in character steps
         if (errorCode === 'E07') {
             const lengthErrorDiv = document.createElement('div');
             lengthErrorDiv.innerHTML = `<span style="color: var(--warning); font-size: 0.9rem; font-family: var(--font-family);">[E07 Input Length must equal six]</span>`;
             traceContainer.appendChild(lengthErrorDiv);
         }
 
-        // 2. Final State Display
         const finalStateDiv = document.createElement('div');
         finalStateDiv.style.marginTop = '1rem';
         finalStateDiv.style.paddingTop = '1rem';
@@ -161,11 +155,8 @@ class UIController {
         }
         
         traceContainer.appendChild(finalStateDiv);
-
-        // Append to DOM
         this.traceTimeline.appendChild(traceContainer);
     }
 }
 
-// Instantiate globally
 const uiController = new UIController();
