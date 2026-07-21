@@ -237,13 +237,19 @@
         </div>
     </footer>
 
-    <!-- JS Imports (Order matters: Utils & DFA first, App last) -->
+<!-- JS Imports (Order matters: Dependencies first, UI and App last) -->
     <script src="assets/js/utils.js"></script>
     <script src="assets/js/dfa.js"></script>
     <script src="assets/js/validator.js"></script>
-    <script src="assets/js/ui.js"></script>
+    
+    <!-- Animation and History must load BEFORE ui.js -->
     <script src="assets/js/animation.js"></script>
     <script src="assets/js/history.js"></script>
+    
+    <!-- UI Controller loads now that its dependencies exist -->
+    <script src="assets/js/ui.js"></script>
+    
+    <!-- App entry point runs last -->
     <script src="assets/js/app.js"></script>
     
     <!-- Initialize Icons -->
