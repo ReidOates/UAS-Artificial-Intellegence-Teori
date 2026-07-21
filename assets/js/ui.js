@@ -1,40 +1,72 @@
 /**
  * assets/js/ui.js
  * 
- * UI Integration Layer & Execution Trace
+ * UI Integration Layer, History & Execution Trace
  * Academic Project: PNR Validator
  */
 
 class UIController {
     constructor() {
+        // Form & Inputs
         this.form = document.getElementById('pnr-form');
         this.input = document.getElementById('pnr-input');
         
+        // Buttons
         this.resetBtn = document.getElementById('btn-reset');
         this.copyBtn = document.getElementById('btn-copy');
         
+        // Result Display Elements
         this.resultContainer = document.getElementById('validation-result');
         this.resultStatus = document.getElementById('result-status');
         this.resultMessage = document.getElementById('result-message');
         this.errorBadge = document.getElementById('error-code-badge');
         
+        // Trace Elements
         this.traceTimeline = document.getElementById('trace-timeline');
         this.currentStateBadge = document.getElementById('current-state-badge');
         
-        this.lastValidationResult = null;
+        // History Elements
+        this.historyContainer = document.getElementById('validation-history');
+        this.historyList = document.getElementById('history-list');
         
-        // Initialize Interactive DFA Visualizer
+        // State & Utilities
+        this.lastValidationResult = null;
         this.dfaVisualizer = new DFAVisualizer('dfa-diagram-container');
+        this.historyManager = new ValidationHistory();
+        
+        this.setupHistoryHeader();
     }
 
     init() {
+        // Event Listeners
         this.form.addEventListener('submit', (e) => this.handleValidation(e));
         this.resetBtn.addEventListener('click', () => this.handleReset());
         this.copyBtn.addEventListener('click', () => this.handleCopy());
         
+        // Auto-uppercase input handling
         this.input.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
         });
+        
+        // Render initial history from LocalStorage
+        this.renderHistory();
+    }
+
+    setupHistoryHeader() {
+        // Dynamically inject the "Clear History" button into the existing HTML structure
+        const header = this.historyContainer.querySelector('h3');
+        header.style.display = 'flex';
+        header.style.justifyContent = 'space-between';
+        header.style.alignItems = 'center';
+
+        this.clearHistoryBtn = document.createElement('button');
+        this.clearHistoryBtn.className = 'btn secondary-btn';
+        this.clearHistoryBtn.style.padding = '0.2rem 0.5rem';
+        this.clearHistoryBtn.style.fontSize = '0.75rem';
+        this.clearHistoryBtn.textContent = 'Clear History';
+        
+        this.clearHistoryBtn.addEventListener('click', () => this.handleClearHistory());
+        header.appendChild(this.clearHistoryBtn);
     }
 
     async handleValidation(e) {
@@ -47,9 +79,15 @@ class UIController {
         this.input.disabled = true;
         document.getElementById('btn-validate').disabled = true;
 
+        // Execute Validation
         const result = Validator.validatePNR(pnrValue);
         this.lastValidationResult = result;
         
+        // Save to History & Render
+        this.historyManager.addEntry(result);
+        this.renderHistory();
+        
+        // Update UI
         this.displayResult(result);
         this.displayTrace(result.executionTrace, result.finalState, result.errorCode);
         
@@ -63,6 +101,7 @@ class UIController {
     }
 
     handleReset() {
+        // Reset purely the active validation state without touching history
         this.form.reset();
         this.lastValidationResult = null;
         
@@ -85,6 +124,47 @@ class UIController {
         navigator.clipboard.writeText(copyText)
             .then(() => alert('Result copied to clipboard!'))
             .catch(err => console.error('Failed to copy', err));
+    }
+
+    handleClearHistory() {
+        this.historyManager.clearHistory();
+        this.renderHistory();
+    }
+
+    renderHistory() {
+        const history = this.historyManager.getHistory();
+        this.historyList.innerHTML = '';
+        
+        if (history.length === 0) {
+            this.historyList.innerHTML = '<li class="history-empty">No history available yet.</li>';
+            this.clearHistoryBtn.classList.add('hidden');
+            return;
+        }
+
+        this.clearHistoryBtn.classList.remove('hidden');
+        
+        // Build history DOM nodes
+        history.forEach(item => {
+            const li = document.createElement('li');
+            li.style.display = 'flex';
+            li.style.justifyContent = 'space-between';
+            li.style.alignItems = 'center';
+            li.style.padding = '0.5rem';
+            li.style.borderBottom = '1px solid var(--border-color)';
+            
+            const timeStr = Utils.formatTime(item.timestamp);
+            const statusColor = item.isValid ? 'var(--success)' : 'var(--error)';
+            const statusLabel = item.isValid ? 'Valid' : `${item.errorCode}`;
+
+            li.innerHTML = `
+                <span style="font-weight: 600; font-family: monospace; font-size: 1.1rem; color: var(--text-main);">${item.input}</span>
+                <div style="text-align: right;">
+                    <span class="badge" style="background-color: transparent; color: ${statusColor}; border: 1px solid ${statusColor}; padding: 0.1rem 0.4rem;">${statusLabel}</span>
+                    <span style="display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">${timeStr}</span>
+                </div>
+            `;
+            this.historyList.appendChild(li);
+        });
     }
 
     displayResult(result) {
@@ -159,4 +239,5 @@ class UIController {
     }
 }
 
+// Instantiate globally
 const uiController = new UIController();
